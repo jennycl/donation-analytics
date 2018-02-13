@@ -48,10 +48,8 @@ def main():
 
         #validate record
         if is_valid_record(data_dict, new_donor) == False:
-            print ("failed", new_donor[data_dict.get("NAME")])
             continue
 
-        print ("success", new_donor[data_dict.get("NAME")])
         #clean record
         new_donor = get_first_five_digits_zip_code(data_dict, new_donor)
         new_donor = to_datetime_object(data_dict, new_donor)
@@ -66,42 +64,53 @@ def main():
         if recipient not in most_current_cal_year:
             most_current_cal_year[recipient] = year
 
-        # check if repeat donor
-        if new_donor_id in donor_history:
-            #check if year is most current
-            if year >= most_current_cal_year[recipient]:
-
-
-                most_current_cal_year[recipient] = year
-
-                record_key = namedtuple('record_key', 'CMTE_ID ZIP_CODE')
-                temp_key = record_key(CMTE_ID=recipient, ZIP_CODE =zip_code)
-
-                year_dict = transaction_history[temp_key]
-
-                if year not in year_dict:
-                    year_dict[year] = [int(donation_amount)]
-                    percentile = np.percentile(year_dict[year], percentile_calc, interpolation="nearest")
-                    output_file.write(recipient + "|" + zip_code + "|" + str(year) + "|" + str(percentile) + "|" + str(donation_amount) + "|" + str(1) +"\n")
-                else:
-                    year_dict[year].append(int(donation_amount))
-                    amt_trans = len(year_dict[year])
-                    percentile = np.percentile(year_dict[year], percentile_calc, interpolation="nearest")
-                    output_file.write(recipient + "|" + zip_code + "|" + str(year) + "|" + str(percentile) + "|" + str(sum(year_dict[year])) + "|" + str(amt_trans)+"\n")
-            else:
-                create_new_record(recipient, zip_code, donation_amount, year, transaction_history)
-        else:
-            print("added as new user:", new_donor_id)
-            donor_history.add(new_donor_id)
+        # first, check if is repeat donor
+        # if not repeat donor, add record and do nothing else
+        if new_donor_id not in donor_history:
             create_new_record(recipient, zip_code, donation_amount, year, transaction_history)
+            donor_history.add(new_donor_id)
+            continue
+
+        # check if year is most current
+        # if not, add record and do nothing else
+        if year < most_current_cal_year[recipient]:
+            create_new_record(recipient, zip_code, donation_amount, year, transaction_history)
+            continue
+
+        # the donor is a repeat donor and this record has the most current year
+        temp_key = (recipient, zip_code)
+
+        # if donor donated to a different recipient
+        # create new record for the new recipient
+        if temp_key not in transaction_history:
+            create_new_record(recipient, zip_code, donation_amount, year, transaction_history)
+            output_file.write(write_output(transaction_history[temp_key], percentile_calc, recipient, zip_code, year))
+            continue
+
+        # if recipient is the same and already recorded, get record
+        year_dict = transaction_history[temp_key]
+
+        # if the year is not recorded for this recipient and zip code (most recent year has been checked)
+        if year not in year_dict:
+            year_dict[year] = [int(donation_amount)] #begin new list of amounts for the year
+            output_file.write(write_output(year_dict, percentile_calc, recipient, zip_code, year))
+        else: # add to list of amounts
+            year_dict[year].append(int(donation_amount))
+            output_file.write(write_output(year_dict, percentile_calc, recipient, zip_code, year))
 
     percentile_file.close()
     itcont.close()
     output_file.close()
 
+
+def write_output(year_dict, percentile_calc, recipient, zip_code, year):
+    num_transactions = len(year_dict[year])
+    total_dollar_amount_donations = sum(year_dict[year])
+    percentile = np.percentile(year_dict[year], percentile_calc, interpolation="nearest")
+    return (str(recipient) + "|" + str(zip_code) + "|" + str(year) + "|" + str(percentile) + "|" + str(total_dollar_amount_donations) + "|" + str(num_transactions) +"\n")
+
 def create_new_record(recipient, zip_code, donation_amount, year, transaction_history):
-    record_key = namedtuple('record_key', 'CMTE_ID ZIP_CODE')
-    new_key = record_key(CMTE_ID=recipient, ZIP_CODE =zip_code)
+    new_key = (recipient, zip_code)
     new_value = {}
 
     val = [int(donation_amount)]
@@ -135,7 +144,6 @@ def append_new_row(df, data_dict, impt_fields, arr):
     return df
 
 def get_repeat_donors(df):
-
     current_year = df["TRANSACTION_DT"].max()
     return True
 
@@ -170,10 +178,8 @@ def is_valid_OTHER_ID(data_dict, arr):
 def is_valid_TRANSACTION_DT(data_dict, arr):
     if field_is_empty(data_dict, arr, "TRANSACTION_DT"):
         return False
-
     if len(str(arr[data_dict.get("TRANSACTION_DT")])) != 8:
         return False
-
     try:
         index = get_index(data_dict, "TRANSACTION_DT")
         DT = arr[index]
@@ -210,5 +216,4 @@ def is_valid_record(data_dict, arr):
             and is_valid_TRANSACTION_AMT(data_dict, arr)
             and is_valid_OTHER_ID(data_dict, arr)
            )
-
 main()
