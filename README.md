@@ -80,4 +80,8 @@ Else:
 ```
 
 ## Authors
-** Jenny Liang **
+* ** Jenny Liang **
+
+## Questions
+
+Please email jenny.liang@nyu.edu
