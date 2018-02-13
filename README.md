@@ -78,7 +78,7 @@ else:
 ```
 
 ## Authors
-* ** Jenny Liang **
+* **Jenny Liang**
 
 ## Questions
 
