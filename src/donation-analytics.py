@@ -102,7 +102,6 @@ def main():
     itcont.close()
     output_file.close()
 
-
 def write_output(year_dict, percentile_calc, recipient, zip_code, year):
     num_transactions = len(year_dict[year])
     total_dollar_amount_donations = sum(year_dict[year])
@@ -117,7 +116,6 @@ def create_new_record(recipient, zip_code, donation_amount, year, transaction_hi
     new_value[year] = val
     transaction_history[new_key] = new_value
 
-
 def create_unique_donor_id(data_dict, arr):
     donor_name = arr[data_dict.get("NAME")]
     donor_name = re.sub(r'\s+', '', donor_name)
@@ -125,7 +123,6 @@ def create_unique_donor_id(data_dict, arr):
     donor_zip_code = arr[data_dict.get("ZIP_CODE")]
     donor_id = donor_name + donor_zip_code
     return donor_id
-
 
 def to_datetime_object(data_dict, arr):
     date = arr[data_dict.get("TRANSACTION_DT")]
