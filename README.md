@@ -67,16 +67,14 @@ The record is checked for validity, making sure to ignore any records that has i
 Once we have the fields we need, we go through the following logic to update the data structure and give output:
 
 ```
-If the donor (identified by a unique donor id of name and zipcode) is a repeat donor:
-  If the year in the record is the most recent calendar year:
+if the donor (identified by a unique donor id of name and zipcode) is a repeat donor AND if the year in the record is the most recent calendar year:
     Calculate percentile using Numpy's Percentile method
     Calculate the total number of transactions by counting the number of entries of the list of amounts
     Calculate the total amount donated by adding the entries of the list of amounts
     Output CMTE_ID, ZIP, Year, percentile, total, and total amount donated
-  Else:
+else:
     Add record to data structure but do not output
-Else:
-  Add record to data structure but do not output
+
 ```
 
 ## Authors
